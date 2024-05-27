@@ -23,7 +23,7 @@ Prometheus is a robust monitoring and alerting toolkit designed for reliability 
 The Prometheus server is the central component that scrapes and stores time-series data.[Brain of metric-based monittoring system]
 The main job of the server is to collect the metrics from various targets using pull model.
 
-![Prometheus-server](https://github.com/Shreyank031/prometheus/assets/115367978/0af11cf5-dfb6-4a05-96a8-0fbd4b55e263)
+![prom-server](https://github.com/Shreyank031/prometheus/assets/115367978/282591cf-0b9d-4f75-8d44-c8ec5b2dc713)
 
 Prometheus periodically scrapes the metrics, based on the `scrape interval`. 
 
