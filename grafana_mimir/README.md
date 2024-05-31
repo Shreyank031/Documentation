@@ -141,7 +141,7 @@ Grafana Mimir has a microservices-based architecture. The system has multiple ho
             - If a majority of ingesters fail, time series might be lost if the failure affects all the ingesters holding the replicas of a specific time series.
 
         2. **Write-ahead log**: 
-            
+
             - The write-ahead log (WAL) writes all incoming series to a `persistent disk` until the series are uploaded to the `long-term storage`. If an ingester fails, a subsequent process restart replays the WAL and recovers the in-memory series samples.
 
             - Unlike sole replication, the WAL ensures that in-memory time series data are not lost in the case of multiple ingester failures. Each ingester can recover the data from the WAL after a subsequent restart.
@@ -155,3 +155,53 @@ Grafana Mimir has a microservices-based architecture. The system has multiple ho
             - There is a different log for this because it is not possible to know if a sample is out-of-order until Mimir tries to append it. First Mimir needs to attempt to append it, the TSDB will detect that it is `out-of-order`, append it anyway if `out-of-order` is enabled and then write it to the log.
 
             - If the ingesters fail, the same characteristics as in the WAL apply.
+
+    3. **Compactor**: The compactor increases `query performance` and reduces long-term storage usage by combining blocks.
+
+        The compactor is the component **responsible** for:
+
+        - Compacting multiple blocks of a given tenant into a single, optimized larger block. 
+        - This deduplicates chunks and reduces the size of the index, resulting in reduced storage costs. 
+        - Querying fewer blocks is faster, so it also increases query speed.
+
+        - Keeping the per-tenant bucket index updated. The bucket index is used by queriers, store-gateways, and rulers to discover both new blocks and deleted blocks in the storage.
+
+        - Deleting blocks that are no longer within a configurable retention period.
+
+### The read path
+
+
+<img width="788" alt="read-path" src="https://github.com/Shreyank031/Documentation/assets/115367978/81b7fdc3-5442-450f-977b-d1ea83dedae0">
+
+1. **Query-frontend**:
+Queries coming into Grafana Mimir arrive at the `query-frontend`. The query-frontend then `splits` queries over longer time ranges into multiple, smaller queries.
+
+The query-frontend next checks the results cache. If the result of a query has been cached, the query-frontend returns the cached results. Queries that cannot be answered from the results cache are put into an in-memory queue within the query-frontend.
+
+   - The query-frontend is a `stateless` component that provides the same API as the querier and can be used to `accelerate` the `read path`.
+   - Although the query-frontend is not required, but it is recommend that you deploy it.
+   - When you deploy the `query-frontend`, you should make query requests to the query-frontend instead of the queriers. 
+   - The `queriers` are required within the cluster to execute the queries.
+
+   - The query-frontend internally holds queries in an internal queue. 
+   - In this situation, queriers act as workers that pull jobs from the queue, execute them, and return the results to the query-frontend for aggregation.
+> Recommended to run atleast two query-frontend replicas for high availability reasons.
+
+<img width="543" alt="query-frontend" src="https://github.com/Shreyank031/Documentation/assets/115367978/961d92e3-372f-4770-b001-d8a2cb98e442">
+
+**The following steps describe how a query moves through the query-frontend.**
+
+1. A `query-frontend`receives a `query`.
+
+2. If the query is a range query, the query-frontend `splits` it by time into **multiple** smaller queries that can be `parallelized`.
+
+3. The query-frontend checks the results `cache`. If the query result is in the cache, the query-frontend returns the **cached result**. If not, query execution continues according to the steps below.
+
+4. If `query-sharding/partitioning` is enabled, the query-frontend attempts to shard the query for further parallelization.
+
+5. The query-frontend places the query (or queries if splitting or sharding of the initial query occurred) in an `in-memory queue`, where it waits to be picked up by a querier.
+
+6. A querier picks up the query from the queue and executes it. If the query was split or sharded into multiple subqueries, different queriers can pick up each of the individual queries.
+
+7. A querier or queriers return the result to query-frontend, which then aggregates and forwards the results to the client.
+
