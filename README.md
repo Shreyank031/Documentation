@@ -5,3 +5,5 @@
 ### Prometheus Architecture: Click [here](prometheus_architecture/README.md).
 
 ### Grafana Mimir Architecture: Click [here](grafana_mimir/README.md).
+
+### Networking Basics: Click [here](networking_basics/README.md)
