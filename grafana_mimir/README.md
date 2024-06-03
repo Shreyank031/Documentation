@@ -205,3 +205,50 @@ The query-frontend next checks the results cache. If the result of a query has b
 
 7. A querier or queriers return the result to query-frontend, which then aggregates and forwards the results to the client.
 
+## Querier
+
+- The querier is a `stateless` component that evaluates `PromQL` expressions by fetching **time series** and **labels** on the read path.
+
+- The querier uses the `store-gateway` component to query the **long-term storage** and the `ingester` component to query **recently written data**.
+
+- Store-gateways and queriers can use Memcached to cache the bucket metadata:
+
+**How it works**
+
+- To find the correct blocks to look up at query time, queriers lazily download the bucket index when they receive the first query for a given tenant. The querier caches the bucket index in memory and periodically keeps it up-to-date.
+- The bucket index contains a list of blocks and block deletion marks of a tenant. The querier later uses the list of blocks and block deletion marks to locate the set of blocks that need to be queried for the given query.
+
+## store-gateway
+
+- The store-gateway component, which is stateful, queries blocks from long-term storage. On the read path, the querier and the ruler use the store-gateway when handling the query, whether the query comes from a user or from when a rule is being evaluated.
+
+- To find the right blocks to look up at query time, the store-gateway requires a view of the bucket in long-term storage. The store-gateway keeps the bucket view updated using one of the following options:
+
+    - Periodically downloading the bucket index (default)
+    - Periodically scanning the bucket
+
+- The store-gateway uses `shuffle-sharding` to divide the blocks of each tenant across a subset of store-gateway instances.
+
+- Store-gateways include an `auto-forget` feature that they can use to unregister an instance from another store-gateway’s ring when a store-gateway does not properly shut down.
+
+- The store-gateway supports the following type of caches:
+
+    1. Index cache
+    2. Chunks cache
+    3. Metadata cache
+
+
+## Long-term storage
+
+- The Grafana Mimir storage format is based on Prometheus TSDB storage. The Grafana Mimir storage format stores each tenant’s time series into their own TSDB, which persists series to an on-disk block. By default, each block has a two-hour range. Each on-disk block directory contains an index file, a file containing metadata, and the time series chunks.
+
+- The TSDB block files contain samples for multiple series. The series inside the blocks are indexed by a per-block index, which indexes both metric names and labels to time series in the block files. Each series has its samples organized in chunks, which represent a specific time range of stored samples. Chunks may vary in length depending on specific configuration options and ingestion rate, usually storing around 120 samples per chunk.
+
+**Grafana Mimir requires any of the following object stores for the block files:**
+
+   1. Amazon S3
+   2. Google Cloud Storage
+   3. Microsoft Azure Storage
+   4. OpenStack Swift
+   5. Local Filesystem (single node only)
+
