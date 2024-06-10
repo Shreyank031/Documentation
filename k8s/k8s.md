@@ -1,8 +1,8 @@
 # kubectl
 
-## What happens when you type kubectl create/run/get
+# What happens when you type `kubectl create/run/get`
 
-#### 1. Validation and generators:
+## 1. Validation and generators:
 
 - The first thing that kubectl will do is perform some **client-side validation**.
 
@@ -58,7 +58,7 @@ Here, `--generator=deployment/apps.v1` explicitly tells `kubectl` to generate a 
 
  2. Named Groups: These cover specific areas not included in the core group, such as apps for application-related resources, batch for batch processing tasks, and extensions for additional features.
 
-##### API Versions and Their Significance
+#### API Versions and Their Significance
 
 `Kubernetes API versions` signify the stability and support level of features, using a prefix `(alpha, beta, and stable)` followed by a version number. This nomenclature is critical for understanding the lifecycle of Kubernetes features:
 
@@ -68,7 +68,7 @@ Here, `--generator=deployment/apps.v1` explicitly tells `kubectl` to generate a 
 
 - **Stable (vX)**: These versions are deemed stable and safe for production use. Backward compatibility is maintained across releases, ensuring long-term support.
 
-#### 2. API groups and version negotiation:
+## 2. API groups and version negotiation:
 
 - In Kubernetes, the API is versioned to allow for changes and improvements over time while maintaining backward compatibility. The API is organized into "API groups," which categorize similar resources together, making them easier to manage and reason about. This modular approach also provides a more scalable and flexible alternative to a monolithic API.
 
@@ -81,7 +81,7 @@ For example:
 
 - When creating or interacting with resources belonging to a specific API group and version, it's essential to specify the `apiVersion` field appropriately in the Kubernetes manifest files. For example, to create a Deployment, you would typically specify `apiVersion: apps/v1` at the top of the Deployment manifest to indicate that you're using the `apps` API group and the `v1` version of that group.
 
-##### This ensures that Kubernetes knows which API group and version to use when processing the manifest and allows for proper version negotiation and compatibility checks during API interactions.
+#### This ensures that Kubernetes knows which API group and version to use when processing the manifest and allows for proper version negotiation and compatibility checks during API interactions.
 
 - After `kubectl` generates the runtime object (such as a Pod, Deployment, or Service), it proceeds to find the appropriate API group and version for that object. This process is known as version negotiation.
 
@@ -93,7 +93,7 @@ For example:
 
 - Performing version negotiation enables `kubectl` to dynamically adapt to the capabilities and configurations of the Kubernetes cluster it's communicating with. This flexibility allows `kubectl` to support a wide range of Kubernetes versions and configurations, ensuring compatibility and consistency in resource management operations.
 
-#### 3. Client auth
+## 3. Client auth
 
 Client authentication is a critical step that `kubectl` performs before sending HTTP requests to the Kubernetes API server. This authentication process ensures that `kubectl` has the necessary credentials to access and interact with the Kubernetes cluster securely.
 
